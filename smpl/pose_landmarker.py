@@ -7,6 +7,7 @@ import numpy as np
 from absl import app, flags, logging
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+from smpl_lift import fit_smpl_from_keypoints
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string("input_image", "testdata/person.jpeg", "Human image.")
@@ -101,6 +102,7 @@ def main(argv):
     kps = extract_2d_keypoints(FLAGS.input_image)
     logging.info("Extracted %d 2D keypoints.", len(kps))
     draw_and_save_keypoints(FLAGS.input_image, kps, FLAGS.output_image)
+    fit_smpl_from_keypoints(kps)
 
 
 if __name__ == "__main__":
