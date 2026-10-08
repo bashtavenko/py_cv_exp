@@ -1,7 +1,11 @@
 """
 BLIP-2: caption an image and ask questions about it (VQA).
-Question: What is in this image? Answer: The patriots are in a 3-4 defense
-What is 3-4 defense? Answer: 3-4 defense is a defensive alignment that is used to defend the run and pass
+
+What is in this image? Answer: The patriots are in a 3-4 defense
+What is 3-4 defense? 3-4 defense is a defensive alignment that is used to defend the run and pass
+
+What is this image? It's a picture of a football player.
+What is the numer of his jersey? 21
 """
 import torch
 from PIL import Image
