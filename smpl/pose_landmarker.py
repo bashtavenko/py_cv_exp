@@ -10,8 +10,9 @@ from mediapipe.tasks.python import vision
 from smpl_lift import fit_smpl_from_keypoints
 
 FLAGS = flags.FLAGS
-flags.DEFINE_string("input_image", "testdata/person.jpeg", "Human image.")
+flags.DEFINE_string("input_image", "testdata/person3.jpeg", "Human image.")
 flags.DEFINE_string("output_image", "output/person_keypoints.jpg", "Annotated output image.")
+flags.DEFINE_string("output_mesh", "output/output_smpl2.ply", "Output mesh.")
 
 
 def resource_path(relative_path: str) -> str:
@@ -65,7 +66,7 @@ def draw_and_save_keypoints(
     logging.info("Saved annotated image to %s", output_path)
 
 
-def extract_2d_keypoints(image_path: str):
+def extract_2d_keypoints(image, height, width):
     model_path = resource_path("pose_landmarker.task")
     base_options = python.BaseOptions(model_asset_path=model_path)
     options = vision.PoseLandmarkerOptions(
@@ -75,13 +76,7 @@ def extract_2d_keypoints(image_path: str):
     )
 
     logging.info("PoseLandmarker created")
-
-    cv_image = cv2.imread(image_path)
-    if cv_image is None:
-        raise FileNotFoundError(f"Could not load image at {image_path}")
-
-    height, width, _ = cv_image.shape
-    rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+    rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
 
     # Recreate detector on every call
@@ -99,10 +94,15 @@ def extract_2d_keypoints(image_path: str):
 
 def main(argv):
     del argv
-    kps = extract_2d_keypoints(FLAGS.input_image)
+
+    cv_image = cv2.imread(FLAGS.input_image)
+    if cv_image is None:
+        raise FileNotFoundError(f"Could not load image at {FLAGS.input_image}")
+    height, width, _ = cv_image.shape
+    kps = extract_2d_keypoints(cv_image, height, width)
     logging.info("Extracted %d 2D keypoints.", len(kps))
     draw_and_save_keypoints(FLAGS.input_image, kps, FLAGS.output_image)
-    fit_smpl_from_keypoints(kps)
+    fit_smpl_from_keypoints(kps, height, width, FLAGS.output_mesh)
 
 
 if __name__ == "__main__":
