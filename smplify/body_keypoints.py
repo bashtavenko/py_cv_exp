@@ -1,18 +1,15 @@
+"""
+Human body keypoints estimation using MediaPipe
+"""
 import os
 import sys
 
 import cv2
 import mediapipe as mp
 import numpy as np
-from absl import app, flags, logging
+from absl import logging
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-from smpl_lift import fit_smpl_from_keypoints
-
-FLAGS = flags.FLAGS
-flags.DEFINE_string("input_image", "testdata/person3.jpeg", "Human image.")
-flags.DEFINE_string("output_image", "output/person_keypoints.jpg", "Annotated output image.")
-flags.DEFINE_string("output_mesh", "output/output_smpl2.ply", "Output mesh.")
 
 
 def resource_path(relative_path: str) -> str:
@@ -46,7 +43,26 @@ def draw_and_save_keypoints(
         output_path: str,
         draw_skeleton: bool = True,
 ) -> None:
-    """Draws 2D keypoints (pixel coordinates) on the image and saves it."""
+    """
+    Draws keypoints on an image and saves the result to a specified file.
+
+    Parameters:
+    image_path: str
+        The file path of the input image to annotate.
+    keypoints_2d: numpy.ndarray
+        A 2D array of shape (N, 2) where N is the number of keypoints. Each row specifies
+        the x and y coordinates of a keypoint.
+    output_path: str
+        The file path where the annotated image will be saved.
+    draw_skeleton: bool, optional
+        A flag indicating whether to draw skeleton connections between keypoints. Default is True.
+
+    Raises:
+    FileNotFoundError
+        If the input image cannot be loaded from the specified path.
+    IOError
+        If the annotated image fails to save to the specified output path.
+    """
     image = cv2.imread(image_path)
     if image is None:
         raise FileNotFoundError(f"Could not load image at {image_path}")
@@ -67,6 +83,31 @@ def draw_and_save_keypoints(
 
 
 def extract_2d_keypoints(image, height, width):
+    """
+    Extracts 2D keypoints from a provided image.
+
+    Uses MediaPipe's PoseLandmarker to detect a single pose in an image.
+    It processes the image, identifies pose landmarks, and returns their 2D coordinates
+    scaled to the given width and height of the image.
+
+    Parameters:
+    image : numpy.ndarray
+        The input image in BGR format.
+    height : int
+        The height of the original image to scale the returned keypoints.
+    width : int
+        The width of the original image to scale the returned keypoints.
+
+    Returns:
+    numpy.ndarray
+        A 2D array containing the (x, y) coordinates of detected pose landmarks
+        scaled to the provided `height` and `width`. Each row corresponds to a
+        landmark's position.
+
+    Raises:
+    ValueError
+        If no poses are detected in the input image.
+    """
     model_path = resource_path("pose_landmarker.task")
     base_options = python.BaseOptions(model_asset_path=model_path)
     options = vision.PoseLandmarkerOptions(
@@ -90,20 +131,3 @@ def extract_2d_keypoints(image, height, width):
         for lm in detection_result.pose_landmarks[0]
     ])
     return keypoints_2d
-
-
-def main(argv):
-    del argv
-
-    cv_image = cv2.imread(FLAGS.input_image)
-    if cv_image is None:
-        raise FileNotFoundError(f"Could not load image at {FLAGS.input_image}")
-    height, width, _ = cv_image.shape
-    kps = extract_2d_keypoints(cv_image, height, width)
-    logging.info("Extracted %d 2D keypoints.", len(kps))
-    draw_and_save_keypoints(FLAGS.input_image, kps, FLAGS.output_image)
-    fit_smpl_from_keypoints(kps, height, width, FLAGS.output_mesh)
-
-
-if __name__ == "__main__":
-    app.run(main)

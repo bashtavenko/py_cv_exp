@@ -1,9 +1,29 @@
+"""
+Fit 3D SMPL body model using 2D keypoints.
+"""
+
 import smplx
 import torch
+import trimesh
 from absl import logging
 
 
 def fit_smpl_from_keypoints(kps_2d, height, width, output_filename):
+    """
+    Fit the SMPL human body model to 2D keypoints for a given image.
+    Saves resulting mesh.
+
+    Parameters:
+    kps_2d (numpy.ndarray): 2D array of shape (N, 2) containing the (x, y) coordinates
+        of keypoints detected in the input image.
+    height (int): Height of the input image in pixels.
+    width (int): Width of the input image in pixels.
+    output_filename (str): Path to the file where the resulting 3D SMPL mesh
+        will be exported.
+
+    Returns:
+    None
+    """
     # Center MediaPipe keypoints relative to image center
     kps_centered = kps_2d.copy()
     kps_centered[:, 0] -= width / 2.0
@@ -84,7 +104,7 @@ def fit_smpl_from_keypoints(kps_2d, height, width, output_filename):
     optimized_vertices = smpl_output.vertices.detach().cpu().numpy()[0]
     optimized_faces = smpl_model.faces
 
-    import trimesh
+    # Create mesh
     mesh = trimesh.Trimesh(
         vertices=optimized_vertices,
         faces=optimized_faces,
@@ -95,4 +115,3 @@ def fit_smpl_from_keypoints(kps_2d, height, width, output_filename):
     logging.info("Saved 3D SMPL mesh to %s", output_filename)
 
     logging.info("Optimization complete with valid human posture.")
-    return optimized_vertices, optimized_faces

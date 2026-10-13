@@ -164,5 +164,5 @@ cython_debug/
 #.idea/
 
 # pose_landmarker.task should be in the root in dev mode
-smpl/pose_landmarker.task
-smpl/models
+smplify/pose_landmarker.task
+smplify/models
