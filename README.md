@@ -26,6 +26,6 @@ On the first try the reconstruction is very rough
 
 ## 4D-Humans / HRM2.0
 
-This produces significant improvement with a very short about of code.    
+This produces significant improvement with a very short amount of code. This is the same SMPL model, but the results are day and night.    
 
 ![pipeline.jpg](4dh/output/pipeline.jpg)
