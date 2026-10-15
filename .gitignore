@@ -165,4 +165,7 @@ cython_debug/
 
 # pose_landmarker.task should be in the root in dev mode
 smplify/pose_landmarker.task
+
+
 smplify/models
+smplify/output/output_smpl2.ply
