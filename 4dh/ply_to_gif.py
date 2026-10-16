@@ -31,7 +31,7 @@ def main(argv):
 
     mesh.compute_vertex_normals()
 
-    width, height = 640, 480
+    width, height = 150, 150
     vis = o3d.visualization.Visualizer()
     vis.create_window(width=width, height=height, visible=False)
     vis.add_geometry(mesh)
