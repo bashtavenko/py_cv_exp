@@ -60,6 +60,7 @@ def main(argv):
     del argv
 
     run_4d_inference(FLAGS.input_image, FLAGS.output_mesh)
+
     if FLAGS.show_mesh:
         logging.info("Opening Open3D viewer...")
         mesh = o3d.io.read_triangle_mesh(FLAGS.output_mesh)
@@ -67,6 +68,11 @@ def main(argv):
         if mesh.is_empty():
             logging.error("Could not load mesh file for visualization.")
         else:
+            # CV Y-down vs Open3D Y-up
+            vertices = np.asarray(mesh.vertices)
+            vertices[:, 1] *= -1.0
+            mesh.vertices = o3d.utility.Vector3dVector(vertices)
+
             mesh.compute_vertex_normals()
             o3d.visualization.draw_geometries(
                 [mesh],
