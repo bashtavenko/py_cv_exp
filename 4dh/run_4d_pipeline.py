@@ -44,6 +44,9 @@ def run_4d_inference(image_path: str, output_mesh_path: str):
         pred_vertices = output['pred_vertices'].detach().cpu().numpy()[0]  # (6890, 3)
         faces = model.smpl.faces  # (13776, 3)
 
+        # Converts CV Y-down coordinates to Open3D Y-up coordinates
+        pred_vertices[:, 1] *= -1.0
+
         # Export mesh to PLY
         mesh = trimesh.Trimesh(
             vertices=pred_vertices,
@@ -53,7 +56,7 @@ def run_4d_inference(image_path: str, output_mesh_path: str):
         mesh.export(output_mesh_path)
         break
 
-    logging.info("Mesh successfully saved to %s", output_mesh_path)
+    logging.info("open3d draw %s", output_mesh_path)
 
 
 def main(argv):
@@ -68,11 +71,6 @@ def main(argv):
         if mesh.is_empty():
             logging.error("Could not load mesh file for visualization.")
         else:
-            # CV Y-down vs Open3D Y-up
-            vertices = np.asarray(mesh.vertices)
-            vertices[:, 1] *= -1.0
-            mesh.vertices = o3d.utility.Vector3dVector(vertices)
-
             mesh.compute_vertex_normals()
             o3d.visualization.draw_geometries(
                 [mesh],

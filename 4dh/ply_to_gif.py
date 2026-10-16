@@ -25,10 +25,6 @@ def main(argv):
     if mesh.is_empty():
         raise ValueError("The loaded mesh file is empty.")
 
-    vertices = np.asarray(mesh.vertices)
-    vertices[:, 1] *= -1.0  # Invert Y coordinates from CV down to OpenGL
-    mesh.vertices = o3d.utility.Vector3dVector(vertices)
-
     mesh.compute_vertex_normals()
 
     width, height = 150, 150
