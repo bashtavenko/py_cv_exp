@@ -29,3 +29,5 @@ On the first try the reconstruction is very rough
 This produces significant improvement with a very short amount of code. This is the same SMPL model, but the results are day and night.    
 
 ![pipeline.jpg](4dh/output/pipeline.jpg)
+
+![turntable.gif](4dh/output/turntable.gif)
