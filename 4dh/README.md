@@ -2,8 +2,14 @@
 
 4D-Humans no longer works with latest PyTorch and Conda won't help there.
 
-The main problem is `detectron2`. It wants the latest PyTorch, but for example on my machine I have not the latest CUDA 12.8, but torch wants 13.0.
-`pip install torch` brings CUDA 13.0
+Today, "pip install torch --index-url ..."" downloads a massive wheel
+that comes pre-packaged with its own private CUDA runtime library.
+
+Because PyTorch brings its own CUDA runtime inside the pip package, venv doesn't need to know
+anything about your system's CUDA installation. It just works
+
+The main problem is `detectron2`. It wants the latest PyTorch, but for example on my machine I have not the latest CUDA 12.8, but 
+"pip install torch" brings CUDA 13.0. 
 
 ```
 pip install -r requirements-torch.txt
