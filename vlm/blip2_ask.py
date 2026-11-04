@@ -1,11 +1,9 @@
 """
 BLIP-2: caption an image and ask questions about it (VQA).
 
-What is in this image? Answer: The patriots are in a 3-4 defense
-What is 3-4 defense? 3-4 defense is a defensive alignment that is used to defend the run and pass
-
-What is this image? It's a picture of a football player.
-What is the numer of his jersey? 21
+Example output:
+  Q: What is in this image?   A: the patriots are in a 3-4 defense
+  Q: What is 3-4 defense?     A: a defensive alignment used to defend the run and pass
 """
 import torch
 from PIL import Image
@@ -20,26 +18,28 @@ flags.DEFINE_list(
     ["What is in this image?", "What is 3-4 defense?"],
     "Comma-separated questions to ask about the image",
 )
-
-MODEL_ID = "Salesforce/blip2-opt-2.7b"
+flags.DEFINE_string("model_id", "Salesforce/blip2-opt-2.7b", "BLIP-2 checkpoint on the Hugging Face Hub")
+flags.DEFINE_integer("max_new_tokens", 30, "Max tokens to generate per answer")
 
 
 def run(_argv):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.float16 if device == "cuda" else torch.float32
-    logging.info("Loading %s on %s (first run downloads several GB)", MODEL_ID, device)
+    logging.info("Loading %s on %s (first run downloads several GB)", FLAGS.model_id, device)
 
-    processor = Blip2Processor.from_pretrained(MODEL_ID)
+    processor = Blip2Processor.from_pretrained(FLAGS.model_id)
     model = Blip2ForConditionalGeneration.from_pretrained(
-        MODEL_ID, torch_dtype=dtype
+        FLAGS.model_id, dtype=dtype
     ).to(device).eval()
 
     image = Image.open(FLAGS.image).convert("RGB")
 
-    def generate(prompt=None):
-        inputs = processor(images=image, text=prompt, return_tensors="pt").to(device, dtype)
+    def generate(prompt: str | None = None) -> str:
+        # noinspection PyArgumentList
+        inputs = processor(images=image, text=prompt, return_tensors="pt")
+        inputs = inputs.to(device=device, dtype=dtype)
         with torch.no_grad():
-            ids = model.generate(**inputs, max_new_tokens=30)
+            ids = model.generate(**inputs, max_new_tokens=FLAGS.max_new_tokens)
         return processor.batch_decode(ids, skip_special_tokens=True)[0].strip()
 
     logging.info("Caption: %s", generate())
