@@ -173,3 +173,5 @@ smplify/output/*.ply
 
 # JetBrains stuff
 .junie
+
+vlm/peek_out/*.mp4

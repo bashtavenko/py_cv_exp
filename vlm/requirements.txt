@@ -8,3 +8,6 @@ torchvision
 absl-py
 num2words
 torchcodec
+datasets
+sentencepiece
+opencv-python
