@@ -2,7 +2,7 @@
 Peek at video-language training data: what does a (video, prompt, answer) sample look like?
 
 Uses FineVideo (HuggingFaceFV/finevideo), one of the video datasets in SmolVLM2's training mix.
-Each sample is an mp4 plus rich JSON metadata with timecodes (scenes, activities), which is
+Each sample is mp4 plus rich JSON metadata with timecodes (scenes, activities), which is
 exactly the temporal signal a video model learns from. We stream the dataset, keep only
 "Sports" clips, and for a few of them:
   * save the mp4
