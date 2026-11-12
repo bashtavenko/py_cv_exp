@@ -1,0 +1,5 @@
+torch
+matplotlib
+numpy
+pyqt6
+plotly
