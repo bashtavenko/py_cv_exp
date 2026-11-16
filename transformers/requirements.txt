@@ -4,3 +4,7 @@ numpy
 pyqt6
 plotly
 seaborn
+transformers
+tokenizers
+datasets
+accelerate
