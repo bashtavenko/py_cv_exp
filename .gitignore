@@ -175,3 +175,6 @@ smplify/output/*.ply
 .junie
 
 vlm/peek_out/*.mp4
+
+transformers/data/cifar*
+transformers/data/vit_cifar.pt
