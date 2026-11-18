@@ -1,6 +1,7 @@
 """
 Kalman filter intuitive tutorial based on
-https://www.mathworks.com/matlabcentral/fileexchange/13479-an-intuitive-introduction-to-kalman-filter/files/Tutorial.m
+https://www.mathworks.com/matlabcentral/fileexchange/13479-an-intuitive
+-introduction-to-kalman-filter/files/Tutorial.m
 
 Predict the position and velocity of a moving train 2 seconds ahead, having
 noisy measurements of its positions along the previous 10 seconds.
@@ -17,11 +18,11 @@ Usage:
 from pathlib import Path
 
 import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
+from absl import app, flags, logging
 
 matplotlib.use("qtagg")
-import matplotlib.pyplot as plt
-from absl import app, flags, logging
 
 FLAGS = flags.FLAGS
 flags.DEFINE_integer("n_samples", 100, "Number of position samples.")
@@ -30,11 +31,13 @@ flags.DEFINE_float("v_true", 10.0, "True constant velocity (m/s).")
 flags.DEFINE_float("sigma_model", 1.0, "Initial model uncertainty std.")
 flags.DEFINE_float("sigma_meas", 1.0, "Measurement noise std (m).")
 flags.DEFINE_integer("window_size", 5, "Running-average window for velocity.")
-flags.DEFINE_integer("samples_into_future", 20, "Extrapolation horizon (samples).")
+flags.DEFINE_integer("samples_into_future", 20,
+                     "Extrapolation horizon (samples).")
 flags.DEFINE_integer("n_last", 10, "Samples used for extrapolation plot.")
 flags.DEFINE_string("output_dir", "output", "Directory for saved plots.")
 flags.DEFINE_boolean("show", False, "Show plots interactively.")
-flags.DEFINE_integer("seed", -1, "Random seed for measurements (-1 = unseeded).")
+flags.DEFINE_integer("seed", -1,
+                     "Random seed for measurements (-1 = unseeded).")
 
 
 def moving_average(x, window):
@@ -68,7 +71,8 @@ def run_kalman(t, x_true, dt, v_true, sigma_model, sigma_meas, rng):
 
         p1 = phi @ p @ phi.T + q
         s = m @ p1 @ m.T + r
-        # np.linalg.solve(s, ...) is numerically preferable for larger S; inv() matches
+        # np.linalg.solve(s, ...) is numerically preferable for larger S;
+        # inv() matches
         k_gain = p1 @ m.T @ np.linalg.inv(s)
         p = p1 - k_gain @ m @ p1
 
@@ -102,11 +106,13 @@ def plot_position(t, x_true, z_buffer, x_k_buffer, output_path, show):
     save_figure(fig, output_path, show)
 
 
-def plot_velocity(t, v_true, z_buffer, x_k_buffer, dt, window_size, output_path, show):
+def plot_velocity(t, v_true, z_buffer, x_k_buffer, dt, window_size, output_path,
+                  show):
     n_samples = len(t) - 1
     instantaneous_velocity = np.zeros(n_samples + 1)
     instantaneous_velocity[1:] = (z_buffer[1:] - z_buffer[:-1]) / dt
-    instantaneous_velocity_avg = moving_average(instantaneous_velocity, window_size)
+    instantaneous_velocity_avg = moving_average(instantaneous_velocity,
+                                                window_size)
 
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.plot(t, np.full_like(t, v_true), "m", label="True velocity")
@@ -114,7 +120,8 @@ def plot_velocity(t, v_true, z_buffer, x_k_buffer, dt, window_size, output_path,
             label="Estimated velocity by raw consecutive samples")
     ax.plot(t, instantaneous_velocity_avg, "c",
             label="Estimated velocity by running average")
-    ax.plot(t, x_k_buffer[1, :], "k", label="Estimated velocity by Kalman filter")
+    ax.plot(t, x_k_buffer[1, :], "k",
+            label="Estimated velocity by Kalman filter")
     ax.set_title("Velocity estimation results")
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Velocity (m/s)")
@@ -131,7 +138,8 @@ def plot_extrapolation(n_samples, dt, v_true, x_k_buffer, velocity_avg,
     start = n_samples + 1 - n_last
     stop = n_samples + 2
     idx = slice(start, stop)
-    horizons = np.arange(samples_into_future + n_last, samples_into_future - 1, -1)
+    horizons = np.arange(samples_into_future + n_last, samples_into_future - 1,
+                         -1)
 
     projected_by_avg = (
             x_k_buffer[0, idx]

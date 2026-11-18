@@ -8,7 +8,8 @@ from smplify.smpl_lift import fit_smpl_from_keypoints
 FLAGS = flags.FLAGS
 flags.DEFINE_string("input_image", "testdata/person3.jpeg", "Human image.")
 flags.DEFINE_string("output_mesh", "output/output_smpl2.ply", "Output mesh.")
-flags.DEFINE_boolean("show_mesh", True, "Visualize the generated 3D mesh using Open3D.")
+flags.DEFINE_boolean("show_mesh", True,
+                     "Visualize the generated 3D mesh using Open3D.")
 
 
 def main(argv):
@@ -22,7 +23,8 @@ def main(argv):
     logging.info("Extracted %d 2D keypoints.", len(kps))
     fit_smpl_from_keypoints(kps, height, width, FLAGS.output_mesh)
 
-    # See more at https://www.open3d.org/docs/release/tutorial/visualization/visualization.html
+    # See more at https://www.open3d.org/docs/release/tutorial/visualization
+    # /visualization.html
     if FLAGS.show_mesh:
         logging.info("Opening Open3D viewer...")
         mesh = o3d.io.read_triangle_mesh(FLAGS.output_mesh)

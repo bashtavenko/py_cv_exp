@@ -24,29 +24,35 @@ flags.DEFINE_enum(
     "mode",
     "train",
     ["train", "eval"],
-    "Execution mode: 'train' to fine-tune and save, 'eval' to load checkpoint and run inference.",
+    "Execution mode: 'train' to fine-tune and save, 'eval' to load checkpoint "
+    "and run inference.",
 )
 flags.DEFINE_string("data_dir", "./data", "Directory to store/load CIFAR-10.")
 flags.DEFINE_string(
     "checkpoint_path",
     "",
-    "Path to save/load checkpoint. Defaults to <data_dir>/vit_cifar.pt if empty.",
+    "Path to save/load checkpoint. Defaults to <data_dir>/vit_cifar.pt if "
+    "empty.",
 )
 flags.DEFINE_integer("epochs", 5, "Number of training epochs.")
-flags.DEFINE_integer("batch_size", 128, "Batch size for training and evaluation.")
+flags.DEFINE_integer("batch_size", 128,
+                     "Batch size for training and evaluation.")
 flags.DEFINE_float("lr", 1e-4, "Learning rate.")
 flags.DEFINE_float("weight_decay", 1e-4, "Weight decay for AdamW.")
 flags.DEFINE_integer("num_workers", 4, "Number of DataLoader worker processes.")
-flags.DEFINE_integer("log_every_n_steps", 50, "Log training metrics every N steps.")
+flags.DEFINE_integer("log_every_n_steps", 50,
+                     "Log training metrics every N steps.")
 flags.DEFINE_bool(
     "freeze_backbone",
     False,
-    "If True, freeze the ViT encoder and only train the linear classification head.",
+    "If True, freeze the ViT encoder and only train the linear classification "
+    "head.",
 )
 flags.DEFINE_bool(
     "use_amp",
     True,
-    "Use Automatic Mixed Precision (FP16/BF16) on CUDA to speed up training/inference.",
+    "Use Automatic Mixed Precision (FP16/BF16) on CUDA to speed up "
+    "training/inference.",
 )
 
 
@@ -105,11 +111,13 @@ def get_dataloaders(
 
 
 def build_model(
-        num_classes: int, freeze_backbone: bool = False, load_pretrained_backbone: bool = True
+        num_classes: int, freeze_backbone: bool = False,
+        load_pretrained_backbone: bool = True
 ) -> Tuple[nn.Module, ViT_B_16_Weights]:
     """Builds ViT-B/16 and replaces the classification head."""
     weights = ViT_B_16_Weights.DEFAULT
-    # Skip downloading ImageNet weights during eval since we load our own checkpoint
+    # Skip downloading ImageNet weights during eval since we load our own
+    # checkpoint
     model = vit_b_16(weights=weights if load_pretrained_backbone else None)
 
     if freeze_backbone:
@@ -124,7 +132,8 @@ def build_model(
 
 @torch.no_grad()
 def evaluate_top1(
-        model: nn.Module, loader: DataLoader, device: torch.device, use_amp: bool = False
+        model: nn.Module, loader: DataLoader, device: torch.device,
+        use_amp: bool = False
 ) -> Tuple[float, float]:
     """Computes Top-1 accuracy (%) and total evaluation time (seconds)."""
     model.eval()
@@ -178,7 +187,8 @@ def run_inference(ckpt_path: str, device: torch.device, use_amp: bool) -> None:
 
     if saved_score is not None:
         logging.info(
-            "Inference Complete | Test Top-1: %.2f%% (Checkpoint recorded score: %.2f%%) | Time: %.2fs",
+            "Inference Complete | Test Top-1: %.2f%% (Checkpoint recorded "
+            "score: %.2f%%) | Time: %.2fs",
             top1,
             saved_score,
             eval_time,
@@ -200,7 +210,8 @@ def run_training(ckpt_path: str, device: torch.device, use_amp: bool) -> None:
     )
     model.to(device)
 
-    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    trainable_params = sum(
+        p.numel() for p in model.parameters() if p.requires_grad)
     total_params = sum(p.numel() for p in model.parameters())
     logging.info(
         "Loaded ViT-B/16 | Trainable params: %s / %s (freeze_backbone=%s)",
@@ -262,7 +273,8 @@ def run_training(ckpt_path: str, device: torch.device, use_amp: bool) -> None:
 
             if step % FLAGS.log_every_n_steps == 0:
                 logging.info(
-                    "Epoch [%d/%d] Step [%d/%d] | Loss: %.4f | Train Top-1: %.2f%%",
+                    "Epoch [%d/%d] Step [%d/%d] | Loss: %.4f | Train Top-1: "
+                    "%.2f%%",
                     epoch,
                     FLAGS.epochs,
                     step,
@@ -279,7 +291,8 @@ def run_training(ckpt_path: str, device: torch.device, use_amp: bool) -> None:
         val_top1, _ = evaluate_top1(model, test_loader, device, use_amp=use_amp)
 
         logging.info(
-            "Epoch [%d/%d] Summary | Time: %.2fs | Train Loss: %.4f | Test Top-1: %.2f%%",
+            "Epoch [%d/%d] Summary | Time: %.2fs | Train Loss: %.4f | Test "
+            "Top-1: %.2f%%",
             epoch,
             FLAGS.epochs,
             epoch_time,
@@ -290,17 +303,20 @@ def run_training(ckpt_path: str, device: torch.device, use_amp: bool) -> None:
         # Save whenever a new best Top-1 score is achieved
         if val_top1 > best_top1:
             best_top1 = val_top1
-            os.makedirs(os.path.dirname(os.path.abspath(ckpt_path)), exist_ok=True)
+            os.makedirs(os.path.dirname(os.path.abspath(ckpt_path)),
+                        exist_ok=True)
             checkpoint = {
                 "model_state_dict": model.state_dict(),
                 "optimizer_state_dict": optimizer.state_dict(),
                 "score": best_top1,
             }
             torch.save(checkpoint, ckpt_path)
-            logging.info("Saved new best checkpoint (Top-1: %.2f%%) -> %s", best_top1, ckpt_path)
+            logging.info("Saved new best checkpoint (Top-1: %.2f%%) -> %s",
+                         best_top1, ckpt_path)
 
     logging.info(
-        "Training Complete | Total Train Time: %.2fs | Best Test Top-1 Accuracy: %.2f%%",
+        "Training Complete | Total Train Time: %.2fs | Best Test Top-1 "
+        "Accuracy: %.2f%%",
         total_train_time,
         best_top1,
     )
@@ -311,7 +327,8 @@ def main(argv) -> None:
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     use_amp = FLAGS.use_amp and device.type == "cuda"
-    ckpt_path = FLAGS.checkpoint_path or os.path.join(FLAGS.data_dir, "vit_cifar.pt")
+    ckpt_path = FLAGS.checkpoint_path or os.path.join(FLAGS.data_dir,
+                                                      "vit_cifar.pt")
 
     logging.info("Mode: %s | Device: %s | AMP: %s", FLAGS.mode, device, use_amp)
 

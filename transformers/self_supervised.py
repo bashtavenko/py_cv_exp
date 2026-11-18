@@ -3,12 +3,12 @@ This is MLP model which is better than bigram model.
 It trains embeddings and predicts the next character similar to bigram.
 However, it scales linearly with the length of vocabulary.
 """
-import torch
-from torch.nn.utils.rnn import pad_sequence
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
 import plotly.graph_objects as go
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torch.nn.utils.rnn import pad_sequence
 
 vocab = "$abcdefghijklmnopqrstuvwxyz"
 vocab_size = len(vocab)
@@ -17,9 +17,9 @@ ch_to_i = {char: i for i, char in enumerate(vocab)}
 i_to_ch = {i: char for i, char in enumerate(vocab)}
 
 names = []
-with open('data/names_2022.txt', 'r') as file:
+with open("data/names_2022.txt", "r") as file:
     for line in file:
-        name, _, _ = line.lower().strip().split(',')
+        name, _, _ = line.lower().strip().split(",")
         names.append("$" + name + "$")
 
 # This is an example of how to encode and decode a string
@@ -27,7 +27,7 @@ with open('data/names_2022.txt', 'r') as file:
 # Define encode and decode functions
 # encode = [0, 1, 4, 1, 0]
 encode = lambda word: torch.tensor([ch_to_i[c] for c in word])
-decode = lambda tensor_i: ''.join(i_to_ch[i.item()] for i in tensor_i)
+decode = lambda tensor_i: "".join(i_to_ch[i.item()] for i in tensor_i)
 # print(f"Encode: {encode(example_name)}")
 # print(f"Decode: {decode(encode(example_name))}")
 
@@ -49,27 +49,31 @@ def show_plot():
     # Assume embeddings is your (28, 3) tensor
     embeddings = model.embedding.weight.detach()
     # Create a list of labels
-    labels = ['$', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
-              'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '*']
+    labels = ["$", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k",
+              "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x",
+              "y", "z", "*"]
     # Create a 3D scatter plot
     fig = go.Figure(data=[go.Scatter3d(
         x=embeddings[:, 0],
         y=embeddings[:, 1],
         z=embeddings[:, 2],
-        mode='markers+text',
+        mode="markers+text",
         text=labels,  # add labels
         textfont=dict(size=12, color="white"),
         marker=dict(size=8),
-        textposition='middle center',  # position the labels
+        textposition="middle center",  # position the labels
         name="characters"
     )])
     # Add x, y, and z axes as lines
-    fig.add_trace(go.Scatter3d(x=[-2, 2], y=[0, 0], z=[0, 0], mode='lines',
-                               line=dict(color='black', dash='solid', width=4), name='x-axis'))
-    fig.add_trace(go.Scatter3d(x=[0, 0], y=[-3, 2], z=[0, 0], mode='lines',
-                               line=dict(color='black', dash='dashdot', width=4), name='y-axis'))
-    fig.add_trace(go.Scatter3d(x=[0, 0], y=[0, 0], z=[-2, 2], mode='lines',
-                               line=dict(color='black', dash='longdash', width=4), name='z-axis'))
+    fig.add_trace(go.Scatter3d(x=[-2, 2], y=[0, 0], z=[0, 0], mode="lines",
+                               line=dict(color="black", dash="solid", width=4),
+                               name="x-axis"))
+    fig.add_trace(go.Scatter3d(x=[0, 0], y=[-3, 2], z=[0, 0], mode="lines",
+                               line=dict(color="black", dash="dashdot",
+                                         width=4), name="y-axis"))
+    fig.add_trace(go.Scatter3d(x=[0, 0], y=[0, 0], z=[-2, 2], mode="lines",
+                               line=dict(color="black", dash="longdash",
+                                         width=4), name="z-axis"))
     fig.update_layout(
         autosize=False,
         width=800,
@@ -113,7 +117,8 @@ def get_batch(batch_size=64):
 # print(labels)
 
 class SequenceMLP(nn.Module):
-    def __init__(self, vocab_size, max_sequence_length, embedding_dim, hidden_dim=32):
+    def __init__(self, vocab_size, max_sequence_length, embedding_dim,
+                 hidden_dim=32):
         super().__init__()
         self.vocab_size = vocab_size
         self.max_sequence_length = max_sequence_length
@@ -125,13 +130,20 @@ class SequenceMLP(nn.Module):
 
     def forward(self, x):
         batch_size, seq_len = x.shape
-        sequence_embeddings = torch.zeros(batch_size, seq_len, self.max_sequence_length * self.embedding_dim)
-        for i in range(seq_len):  # 0..16. 17 is the max sequence length in the current batch
-            subsequence = torch.zeros(batch_size, self.max_sequence_length, dtype=torch.int)
+        sequence_embeddings = torch.zeros(batch_size, seq_len,
+                                          self.max_sequence_length *
+                                          self.embedding_dim)
+        for i in range(
+                seq_len):  # 0..16. 17 is the max sequence length in the
+            # current batch
+            subsequence = torch.zeros(batch_size, self.max_sequence_length,
+                                      dtype=torch.int)
             prefix = x[:, :i + 1]
             subsequence[:, :i + 1] = prefix
             emb = self.embedding(subsequence)
-            sequence_embeddings[:, i, :] = emb.view(batch_size, -1)  # flatten into a list of values
+            sequence_embeddings[:, i, :] = emb.view(batch_size,
+                                                    -1)  # flatten into a
+            # list of values
         x = self.linear(sequence_embeddings)  # Passed through a hidden layer
         x = self.relu(x)
         x = self.out(x)
@@ -149,10 +161,13 @@ def train(model, optimizer, num_steps=10_001, loss_report_interval=1_000):
         inputs, labels = get_batch()
         optimizer.zero_grad()
         logits = model(inputs)
-        loss = F.cross_entropy(logits.view(-1, logits.shape[-1]), labels.view(-1), ignore_index=-1)
+        loss = F.cross_entropy(logits.view(-1, logits.shape[-1]),
+                               labels.view(-1), ignore_index=-1)
         losses.append(loss.item())
         if i % loss_report_interval == 0:
-            print(f'Average loss at step {i}: {sum(losses[-loss_report_interval:]) / loss_report_interval:.4f}')
+            print(
+                f"Average loss at step {i}: "
+                f"{sum(losses[-loss_report_interval:]) / loss_report_interval:.4f}")
         loss.backward()
         optimizer.step()
 

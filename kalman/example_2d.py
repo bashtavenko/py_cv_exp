@@ -1,10 +1,12 @@
 """
-2D Kalman filter tutorial based on Simon J.D. Prince Computer Vision textbook Figure 19.4.
+`2D Kalman filter tutorial based on Simon J.D. Prince Computer Vision textbook
+Figure 19.4.
 
 Object approximately circling around a central point in two dimensions
 (x_t = x_{t-1} + noise) with the Brownian motion model (randowm walk).
 The true state evolves in a 2D circle.
-the filter still successfully reduces posterior covariance compared to raw measurements.
+the filter still successfully reduces posterior covariance compared to raw
+measurements.
 
 Usage:
     python kalman_2d.py
@@ -15,21 +17,23 @@ Usage:
 from pathlib import Path
 
 import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
+from absl import app, flags, logging
 
 matplotlib.use("qtagg")
-import matplotlib.pyplot as plt
-from absl import app, flags, logging
 
 FLAGS = flags.FLAGS
 flags.DEFINE_integer("n_samples", 20, "Number of position samples.")
 flags.DEFINE_float("dt", 1.0, "Sample interval (s).")
 flags.DEFINE_float("radius", 10.0, "Radius of the true circular trajectory.")
-flags.DEFINE_float("sigma_model", 1.5, "Process noise std (random walk perturbation).")
+flags.DEFINE_float("sigma_model", 1.5,
+                   "Process noise std (random walk perturbation).")
 flags.DEFINE_float("sigma_meas", 2.5, "Measurement noise std.")
 flags.DEFINE_string("output_dir", "output", "Directory for saved plots.")
 flags.DEFINE_boolean("show", False, "Show plots interactively.")
-flags.DEFINE_integer("seed", 42, "Random seed for measurements (-1 = unseeded).")
+flags.DEFINE_integer("seed", 42,
+                     "Random seed for measurements (-1 = unseeded).")
 
 
 def generate_true_trajectory(n_samples, radius):
@@ -51,10 +55,12 @@ def run_kalman_2d(true_states, sigma_model, sigma_meas, rng):
     r = np.eye(2) * (sigma_meas ** 2)  # Measurement noise covariance
 
     # Initial Guesses
-    # Start the estimate exactly at the first measurement to match standard priors
+    # Start the estimate exactly at the first measurement to match standard
+    # priors
     z_initial = true_states[:, 0:1] + sigma_meas * rng.standard_normal((2, 1))
     x_k_prev = z_initial
-    p = np.eye(2) * (sigma_meas ** 2)  # Initial covariance matches measurement noise
+    p = np.eye(2) * (
+            sigma_meas ** 2)  # Initial covariance matches measurement noise
 
     x_k_buffer = np.zeros((2, n_samples))
     z_buffer = np.zeros((2, n_samples))
@@ -65,7 +71,8 @@ def run_kalman_2d(true_states, sigma_model, sigma_meas, rng):
         if k == 0:
             z = z_initial
         else:
-            z = true_states[:, k:k + 1] + sigma_meas * rng.standard_normal((2, 1))
+            z = true_states[:, k:k + 1] + sigma_meas * rng.standard_normal(
+                (2, 1))
 
         z_buffer[:, k] = z.ravel()
 
@@ -98,10 +105,12 @@ def save_figure(fig, path, show):
     plt.close(fig)
 
 
-def plot_textbook_comparison(true_states, z_buffer, x_k_buffer, p_buffer, sigma_meas, output_path, show):
+def plot_textbook_comparison(true_states, z_buffer, x_k_buffer, p_buffer,
+                             sigma_meas, output_path, show):
     """Plots a side-by-side comparison matching textbook Figure 19.4."""
     n_samples = true_states.shape[1]
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6), sharex=True, sharey=True)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6), sharex=True,
+                                   sharey=True)
 
     # --- Figure A: Measurements Alone ---
     ax1.set_title("a) Measurements Only")
@@ -109,16 +118,19 @@ def plot_textbook_comparison(true_states, z_buffer, x_k_buffer, p_buffer, sigma_
     ax1.set_ylabel("$w_2$", rotation=0, labelpad=15)
 
     # True state (red dots/lines)
-    ax1.plot(true_states[0, :], true_states[1, :], 'r.-', markersize=8, label='True state')
+    ax1.plot(true_states[0, :], true_states[1, :], "r.-", markersize=8,
+             label="True state")
 
     # Measurements (magenta dots, black connecting lines)
-    ax1.plot(z_buffer[0, :], z_buffer[1, :], 'k-', zorder=1, linewidth=1)
-    ax1.scatter(z_buffer[0, :], z_buffer[1, :], color='magenta', zorder=2, s=20, label='Measurements')
+    ax1.plot(z_buffer[0, :], z_buffer[1, :], "k-", zorder=1, linewidth=1)
+    ax1.scatter(z_buffer[0, :], z_buffer[1, :], color="magenta", zorder=2, s=20,
+                label="Measurements")
 
     # Measurement covariance circles
     for k in range(n_samples):
         circle = plt.Circle((z_buffer[0, k], z_buffer[1, k]), radius=sigma_meas,
-                            color='magenta', fill=False, linestyle=':', linewidth=1)
+                            color="magenta", fill=False, linestyle=":",
+                            linewidth=1)
         ax1.add_patch(circle)
 
     # --- Figure B: Kalman Filter Estimates ---
@@ -127,23 +139,27 @@ def plot_textbook_comparison(true_states, z_buffer, x_k_buffer, p_buffer, sigma_
     ax2.set_ylabel("$w_2$", rotation=0, labelpad=15)
 
     # True state (red dots/lines)
-    ax2.plot(true_states[0, :], true_states[1, :], 'r.-', markersize=8, label='True state')
+    ax2.plot(true_states[0, :], true_states[1, :], "r.-", markersize=8,
+             label="True state")
 
     # Kalman Estimates (teal dots, black connecting lines)
-    ax2.plot(x_k_buffer[0, :], x_k_buffer[1, :], 'k-', zorder=1, linewidth=1)
-    ax2.scatter(x_k_buffer[0, :], x_k_buffer[1, :], color='teal', zorder=2, s=20, label='Posterior Mean')
+    ax2.plot(x_k_buffer[0, :], x_k_buffer[1, :], "k-", zorder=1, linewidth=1)
+    ax2.scatter(x_k_buffer[0, :], x_k_buffer[1, :], color="teal", zorder=2,
+                s=20, label="Posterior Mean")
 
     # Posterior covariance circles
     for k in range(n_samples):
-        # Since p_buffer is a diagonal matrix (isotropic), std dev is sqrt of variance
+        # Since p_buffer is a diagonal matrix (isotropic), std dev is sqrt of
+        # variance
         radius = np.sqrt(p_buffer[0, 0, k])
         circle = plt.Circle((x_k_buffer[0, k], x_k_buffer[1, k]), radius=radius,
-                            color='teal', fill=False, linestyle=':', linewidth=1)
+                            color="teal", fill=False, linestyle=":",
+                            linewidth=1)
         ax2.add_patch(circle)
 
     # Format axes to look like textbook
     for ax in (ax1, ax2):
-        ax.set_aspect('equal')
+        ax.set_aspect("equal")
         ax.set_xticks([])
         ax.set_yticks([])
         ax.grid(False)

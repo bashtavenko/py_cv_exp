@@ -8,14 +8,14 @@ weights = softmax(q kᵀ / √d)    # how relevant is each earlier token?
 out = weights @ v               # weighted mix of their information
 
 """
+import matplotlib.pyplot as plt
+import seaborn as sns
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import matplotlib.pyplot as plt
-import seaborn as sns
 
-vocab = "$" + ''.join(chr(ord('a') + i) for i in range(26))
+vocab = "$" + "".join(chr(ord("a") + i) for i in range(26))
 vocab_size = len(vocab)
 # Create dictionaries for character to index and index to character
 ch_to_i = {char: i for i, char in enumerate(vocab)}
@@ -23,19 +23,19 @@ i_to_ch = {i: char for i, char in enumerate(vocab)}
 
 # Define encode and decode functions
 encode = lambda word: torch.tensor([ch_to_i[c] for c in word])
-decode = lambda tensor_i: ''.join(i_to_ch[i.item()] for i in tensor_i)
+decode = lambda tensor_i: "".join(i_to_ch[i.item()] for i in tensor_i)
 
 # Get data
 names = []
-with open('data/names_2022.txt', 'r') as file:
+with open("data/names_2022.txt", "r") as file:
     for line in file:
-        name, _, _ = line.lower().strip().split(',')
+        name, _, _ = line.lower().strip().split(",")
         names.append(name)
 
 # filter out names 10 characters and longer
 names = [name for name in names if len(name) < 10]
 # Add special character boundary to names
-names = ['$' + name + '$' for name in names]
+names = ["$" + name + "$" for name in names]
 
 # Length of max name
 max_name_length = max(len(name) for name in names)
@@ -71,10 +71,13 @@ def train(model, optimizer, num_steps=10_001, loss_report_interval=1_000):
         inputs, labels = get_batch()
         optimizer.zero_grad()
         logits = model(inputs)
-        loss = F.cross_entropy(logits.view(-1, logits.shape[-1]), labels.view(-1), ignore_index=-1)
+        loss = F.cross_entropy(logits.view(-1, logits.shape[-1]),
+                               labels.view(-1), ignore_index=-1)
         losses.append(loss.item())
         if i % loss_report_interval == 0:
-            print(f'Average loss at step {i}: {sum(losses[-loss_report_interval:]) / loss_report_interval:.4f}')
+            print(
+                f"Average loss at step {i}: "
+                f"{sum(losses[-loss_report_interval:]) / loss_report_interval:.4f}")
         loss.backward()
         optimizer.step()
 
@@ -136,7 +139,7 @@ def scaled_dot_product_causal_attention(q, k, v):
     # Lower triangular matrix of 1s and then fill the upper
     # triangular matrix with -inf
     mask = torch.tril(torch.ones(attn_weights.shape[1:]), diagonal=0)
-    attn_weights = attn_weights.masked_fill(mask == 0, value=float('-inf'))
+    attn_weights = attn_weights.masked_fill(mask == 0, value=float("-inf"))
     # Normalize the attention weights. Prevents gradient explosion.
     attn_weights = attn_weights / torch.sqrt(torch.tensor(k.shape[-1]).float())
     attn_weights = F.softmax(attn_weights, dim=-1)
@@ -146,7 +149,8 @@ def scaled_dot_product_causal_attention(q, k, v):
 
 output, attn_weights = scaled_dot_product_causal_attention(query, key, value)
 # Pytorch already implements this
-expected_output = F.scaled_dot_product_attention(query, key, value, is_causal=True)
+expected_output = F.scaled_dot_product_attention(query, key, value,
+                                                 is_causal=True)
 print(torch.allclose(output, expected_output))
 
 
@@ -160,7 +164,9 @@ class AttentionMLP(nn.Module):
         self.key_proj = nn.Linear(n_embd, n_embd)
         self.value_proj = nn.Linear(n_embd, n_embd)
 
-        self.register_buffer("mask", torch.tril(torch.ones((block_size, block_size)), diagonal=0))
+        self.register_buffer("mask",
+                             torch.tril(torch.ones((block_size, block_size)),
+                                        diagonal=0))
 
         self.mlp = nn.Sequential(
             nn.Linear(n_embd, n_hidden),
@@ -179,8 +185,10 @@ class AttentionMLP(nn.Module):
         v = self.value_proj(x)
 
         attn_weights = q @ k.transpose(1, 2)
-        attn_weights = attn_weights.masked_fill(self.mask[:seq_len, :seq_len] == 0, value=float('-inf'))
-        attn_weights = attn_weights / torch.sqrt(torch.tensor(k.shape[-1]).float())
+        attn_weights = attn_weights.masked_fill(
+            self.mask[:seq_len, :seq_len] == 0, value=float("-inf"))
+        attn_weights = attn_weights / torch.sqrt(
+            torch.tensor(k.shape[-1]).float())
         self.attn_weights = F.softmax(attn_weights, dim=-1)
         x = self.attn_weights @ v
         x = self.mlp(x)
@@ -203,19 +211,20 @@ generate_samples(model, 10)
 
 def visualize_attention(attention_weights, name):
     plt.figure(figsize=(30, 15))
-    ax = sns.heatmap(attention_weights.cpu().detach().numpy(), annot=True, cmap="YlGnBu", annot_kws={"size": 25})
+    ax = sns.heatmap(attention_weights.cpu().detach().numpy(), annot=True,
+                     cmap="YlGnBu", annot_kws={"size": 25})
     labels = list(name)
     ticks = [i + 0.5 for i in range(len(labels))]
-    plt.xticks(ticks=ticks, labels=labels, rotation='horizontal')
-    plt.yticks(ticks=ticks, labels=labels, rotation='horizontal')
-    plt.tick_params(axis='both', which='major', labelsize=25)
+    plt.xticks(ticks=ticks, labels=labels, rotation="horizontal")
+    plt.yticks(ticks=ticks, labels=labels, rotation="horizontal")
+    plt.tick_params(axis="both", which="major", labelsize=25)
     cbar = ax.collections[0].colorbar
     cbar.ax.tick_params(labelsize=25)
     plt.show()
 
 
-# Row 3, 'o' position. Primary focus on 'o' itself and considers
-# 0.11 for 'j'
+# Row 3, "o" position. Primary focus on "o" itself and considers
+# 0.11 for "j"
 name = "$" + "john" + "$"
 encoded_name = encode(name)
 model(encoded_name.unsqueeze(0))

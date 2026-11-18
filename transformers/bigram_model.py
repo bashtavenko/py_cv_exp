@@ -1,11 +1,11 @@
 """
 Bigram model
 """
-import torch
 import matplotlib
+import matplotlib.pyplot as plt
+import torch
 
 matplotlib.use("qtagg")
-import matplotlib.pyplot as plt
 
 vocab = "$abcdefghijklmnopqrstuvwxyz"
 vocab_size = len(vocab)
@@ -14,9 +14,9 @@ ch_to_i = {char: i for i, char in enumerate(vocab)}
 i_to_ch = {i: char for i, char in enumerate(vocab)}
 
 names = []
-with open('data/names_2022.txt', 'r') as file:
+with open("data/names_2022.txt", "r") as file:
     for line in file:
-        name, _, _ = line.lower().strip().split(',')
+        name, _, _ = line.lower().strip().split(",")
         names.append("$" + name + "$")
 
 print(f"Original name length:{len(names)}")
@@ -32,11 +32,11 @@ print(f"Min name length: {min_name_length}")
 print(f"Average name length: {sum(name_lengths) / num_names}")
 
 # Create a histogram of name lengths
-plt.hist(name_lengths, bins=range(1, 17), align='left', rwidth=0.8)
-plt.xlabel('Name Length')
+plt.hist(name_lengths, bins=range(1, 17), align="left", rwidth=0.8)
+plt.xlabel("Name Length")
 plt.xticks(range(0, 17))
-plt.ylabel('Frequency')
-plt.title('Distribution of Name Lengths')
+plt.ylabel("Frequency")
+plt.title("Distribution of Name Lengths")
 # plt.show()
 
 # filter out names 10 characters and longer
@@ -50,8 +50,9 @@ print(f"Shortened names: {len(names)}")
 bigram = torch.zeros((vocab_size, vocab_size))
 total = 0
 for name in names:
-    # '$olivia$'
-    # [('$', 'o'), ('o', 'l'), ('l', 'i'), ('i', 'v'), ('v', 'i'), ('i', 'a'), ('a', '$')]
+    # "$olivia$"
+    # [("$", "o"), ("o", "l"), ("l", "i"), ("i", "v"), ("v", "i"), ("i",
+    # "a"), ("a", "$")]
     for ch1, ch2 in zip(name, name[1:]):
         ch1_int = ch_to_i[ch1]
         ch2_int = ch_to_i[ch2]
@@ -63,7 +64,8 @@ bigram /= total
 # jon, zis, khrikyasahvi, sakanee, ana
 # The problem with this is
 # 1. Probability increase exponential with vocabulary size
-# 2. Based on previous character. With more previous characters, exponential increase
+# 2. Based on previous character. With more previous characters, exponential
+# increase
 for i in range(5):
     generated = "$"
     while True:

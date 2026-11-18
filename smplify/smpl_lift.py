@@ -14,7 +14,8 @@ def fit_smpl_from_keypoints(kps_2d, height, width, output_filename):
     Saves resulting mesh.
 
     Parameters:
-    kps_2d (numpy.ndarray): 2D array of shape (N, 2) containing the (x, y) coordinates
+    kps_2d (numpy.ndarray): 2D array of shape (N, 2) containing the (x,
+    y) coordinates
         of keypoints detected in the input image.
     height (int): Height of the input image in pixels.
     width (int): Width of the input image in pixels.
@@ -33,7 +34,8 @@ def fit_smpl_from_keypoints(kps_2d, height, width, output_filename):
     MP_INDICES = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
     SMPL_INDICES = [16, 17, 18, 19, 20, 21, 1, 2, 4, 5, 7, 8]
 
-    gt_keypoints_2d = torch.tensor(kps_centered[MP_INDICES], dtype=torch.float32)
+    gt_keypoints_2d = torch.tensor(kps_centered[MP_INDICES],
+                                   dtype=torch.float32)
 
     smpl_model = smplx.create(
         model_path="models/smpl/SMPL_NEUTRAL.pkl",
@@ -48,7 +50,8 @@ def fit_smpl_from_keypoints(kps_2d, height, width, output_filename):
     betas = torch.zeros([1, 10], dtype=torch.float32, requires_grad=True)
 
     # Set body starts at Z = 2.5 meters in front of camera
-    transl = torch.tensor([[0.0, 0.0, 2.5]], dtype=torch.float32, requires_grad=True)
+    transl = torch.tensor([[0.0, 0.0, 2.5]], dtype=torch.float32,
+                          requires_grad=True)
 
     optimizer = torch.optim.Adam(
         [global_orient, body_pose, betas, transl],
@@ -86,13 +89,15 @@ def fit_smpl_from_keypoints(kps_2d, height, width, output_filename):
 
         # L1 / L2 loss
         diff = proj_2d - gt_keypoints_2d
-        loss_reprojection = torch.mean(torch.sqrt(torch.sum(diff ** 2, dim=-1) + 1e-4))
+        loss_reprojection = torch.mean(
+            torch.sqrt(torch.sum(diff ** 2, dim=-1) + 1e-4))
 
         # Regularization priors to keep body human-shaped
         loss_pose_prior = torch.mean(body_pose ** 2)
         loss_shape_prior = torch.mean(betas ** 2)
 
-        total_loss = loss_reprojection + (0.02 * loss_pose_prior) + (0.001 * loss_shape_prior)
+        total_loss = loss_reprojection + (0.02 * loss_pose_prior) + (
+                    0.001 * loss_shape_prior)
 
         total_loss.backward()
         optimizer.step()

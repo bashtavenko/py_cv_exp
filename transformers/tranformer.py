@@ -54,16 +54,20 @@ def get_batch(batch_size=64):
     labels = Y[random_idx]
     return batch, labels
 
+
 def train(model, optimizer, num_steps=10_001, loss_report_interval=1_000):
     losses = []
     for i in range(1, num_steps):
         inputs, labels = get_batch()
         optimizer.zero_grad()
         logits = model(inputs)
-        loss = F.cross_entropy(logits.view(-1, logits.shape[-1]), labels.view(-1), ignore_index=-1)
+        loss = F.cross_entropy(logits.view(-1, logits.shape[-1]),
+                               labels.view(-1), ignore_index=-1)
         losses.append(loss.item())
         if i % loss_report_interval == 0:
-            print(f'Average loss at step {i}: {sum(losses[-loss_report_interval:]) / loss_report_interval:.4f}')
+            print(
+                f'Average loss at step {i}: '
+                f'{sum(losses[-loss_report_interval:]) / loss_report_interval:.4f}')
         loss.backward()
         optimizer.step()
 
@@ -87,7 +91,8 @@ def generate_samples(model, num_samples=1, max_len=max_name_length):
 class TransformerBlock(nn.Module):
     def __init__(self, n_embd, num_heads=4, n_hidden=64):
         super().__init__()
-        assert n_embd % num_heads == 0, "Embedding dimension must be divisible by the number of heads"
+        assert n_embd % num_heads == 0, ("Embedding dimension must be "
+                                         "divisible by the number of heads")
 
         self.num_heads = num_heads
         self.head_dim = n_embd // num_heads
@@ -113,15 +118,19 @@ class TransformerBlock(nn.Module):
         v = self.value_proj(x)
 
         # multiheaded attention
-        q = q.view(batch_size, sequence_length, self.num_heads, self.head_dim).transpose(1, 2)
-        k = k.view(batch_size, sequence_length, self.num_heads, self.head_dim).transpose(1, 2)
-        v = v.view(batch_size, sequence_length, self.num_heads, self.head_dim).transpose(1, 2)
+        q = q.view(batch_size, sequence_length, self.num_heads,
+                   self.head_dim).transpose(1, 2)
+        k = k.view(batch_size, sequence_length, self.num_heads,
+                   self.head_dim).transpose(1, 2)
+        v = v.view(batch_size, sequence_length, self.num_heads,
+                   self.head_dim).transpose(1, 2)
 
         # attention
         attn_weights = F.scaled_dot_product_attention(q, k, v, is_causal=True)
 
         # multiple heads concatenation
-        attn_weights = attn_weights.transpose(1, 2).contiguous().view(batch_size, sequence_length, -1)
+        attn_weights = attn_weights.transpose(1, 2).contiguous().view(
+            batch_size, sequence_length, -1)
 
         # norm and residual connections here
         x = self.norm_1(x + attn_weights)
@@ -138,7 +147,8 @@ class Transformer(nn.Module):
         self.positional_embedding = nn.Embedding(block_size, n_embd)
 
         # Multihead attention
-        # Each head has its own set of learnable parameters (queries, keys, values)
+        # Each head has its own set of learnable parameters (queries, keys,
+        # values)
         self.transformer_blocks = nn.Sequential(
             *[TransformerBlock(n_embd) for _ in range(num_blocks)]
         )

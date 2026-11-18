@@ -29,7 +29,7 @@ encode = tokenizer.encode
 """
 Encode text example
 """
-with open('data/odyssey.txt', 'r', encoding='utf-8') as f:
+with open("data/odyssey.txt", "r", encoding="utf-8") as f:
     text = f.read()
 # Tokenize the text file
 encoding = tokenizer.encode(text)
@@ -39,7 +39,7 @@ X, Y = [], []
 for i in range(0, len(encoding.ids) - sequence_length, sequence_length):
     X.append(encoding.ids[i:i + sequence_length])
     Y.append(encoding.ids[i + 1:i + sequence_length + 1])
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 X = torch.tensor(X).to(device)
 Y = torch.tensor(Y).to(device)
 print(X.shape)
@@ -61,10 +61,13 @@ def train(model, optimizer, num_steps=10_001, loss_report_interval=1_000):
         inputs, labels = get_batch()
         optimizer.zero_grad()
         logits = model(inputs)
-        loss = F.cross_entropy(logits.view(-1, logits.shape[-1]), labels.view(-1), ignore_index=-1)
+        loss = F.cross_entropy(logits.view(-1, logits.shape[-1]),
+                               labels.view(-1), ignore_index=-1)
         losses.append(loss.item())
         if i % loss_report_interval == 0:
-            print(f'Average loss at step {i}: {sum(losses[-loss_report_interval:]) / loss_report_interval:.4f}')
+            print(
+                f"Average loss at step {i}: "
+                f"{sum(losses[-loss_report_interval:]) / loss_report_interval:.4f}")
         loss.backward()
         optimizer.step()
 
@@ -72,7 +75,8 @@ def train(model, optimizer, num_steps=10_001, loss_report_interval=1_000):
 class TransformerBlock(nn.Module):
     def __init__(self, n_embd, num_heads=4, n_hidden=64):
         super().__init__()
-        assert n_embd % num_heads == 0, "Embedding dimension must be divisible by the number of heads"
+        assert n_embd % num_heads == 0, ("Embedding dimension must be "
+                                         "divisible by the number of heads")
 
         self.num_heads = num_heads  # <1>
         self.head_dim = n_embd // num_heads
@@ -98,15 +102,19 @@ class TransformerBlock(nn.Module):
         v = self.value_proj(x)
 
         # multiheaded attention
-        q = q.view(batch_size, sequence_length, self.num_heads, self.head_dim).transpose(1, 2)  # <1>
-        k = k.view(batch_size, sequence_length, self.num_heads, self.head_dim).transpose(1, 2)
-        v = v.view(batch_size, sequence_length, self.num_heads, self.head_dim).transpose(1, 2)
+        q = q.view(batch_size, sequence_length, self.num_heads,
+                   self.head_dim).transpose(1, 2)  # <1>
+        k = k.view(batch_size, sequence_length, self.num_heads,
+                   self.head_dim).transpose(1, 2)
+        v = v.view(batch_size, sequence_length, self.num_heads,
+                   self.head_dim).transpose(1, 2)
 
         # attention
         attn_weights = F.scaled_dot_product_attention(q, k, v, is_causal=True)
 
         # multiple heads concatenation
-        attn_weights = attn_weights.transpose(1, 2).contiguous().view(batch_size, sequence_length, -1)
+        attn_weights = attn_weights.transpose(1, 2).contiguous().view(
+            batch_size, sequence_length, -1)
 
         # norm and residual connections here
         x = self.norm_1(x + attn_weights)
@@ -129,15 +137,14 @@ class Transformer(nn.Module):
     def forward(self, x):
         _, seq_len = x.shape
 
-        pos_embd = self.positional_embedding(torch.arange(seq_len).to(device))  # <1>
+        pos_embd = self.positional_embedding(
+            torch.arange(seq_len).to(device))  # <1>
         char_embd = self.char_embedding(x)
         x = char_embd + pos_embd
         x = self.transformer_blocks(x)
         x = self.output_proj(x)
 
         return x
-
-
 
 
 def generate_samples(model, num_samples=1, max_len=sequence_length):
@@ -158,7 +165,8 @@ def generate_samples(model, num_samples=1, max_len=sequence_length):
 
 
 def format_sequence(sequence):
-    # This function formats the sequence to handle punctuation and spacing correctly.
+    # This function formats the sequence to handle punctuation and spacing
+    # correctly.
     formatted_sequence = ""
     for i, char in enumerate(sequence):
         if char in ",.;:!?":

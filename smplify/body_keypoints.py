@@ -15,7 +15,8 @@ from mediapipe.tasks.python import vision
 def resource_path(relative_path: str) -> str:
     """
     Provides an embedded resource path per
-    https://developers.google.com/edge/mediapipe/solutions/setup_python#packaging_python_tasks_apps_with_pyinstaller
+    https://developers.google.com/edge/mediapipe/solutions/setup_python
+    #packaging_python_tasks_apps_with_pyinstaller
     Need pyinstaller for the deployment per this doc.
     """
     base_path = getattr(sys, "_MEIPASS", os.path.abspath("."))
@@ -50,12 +51,14 @@ def draw_and_save_keypoints(
     image_path: str
         The file path of the input image to annotate.
     keypoints_2d: numpy.ndarray
-        A 2D array of shape (N, 2) where N is the number of keypoints. Each row specifies
+        A 2D array of shape (N, 2) where N is the number of keypoints. Each
+        row specifies
         the x and y coordinates of a keypoint.
     output_path: str
         The file path where the annotated image will be saved.
     draw_skeleton: bool, optional
-        A flag indicating whether to draw skeleton connections between keypoints. Default is True.
+        A flag indicating whether to draw skeleton connections between
+        keypoints. Default is True.
 
     Raises:
     FileNotFoundError
@@ -71,7 +74,8 @@ def draw_and_save_keypoints(
 
     if draw_skeleton:
         for i, j in POSE_CONNECTIONS:
-            cv2.line(image, tuple(pts[i]), tuple(pts[j]), (0, 255, 0), 2, cv2.LINE_AA)
+            cv2.line(image, tuple(pts[i]), tuple(pts[j]), (0, 255, 0), 2,
+                     cv2.LINE_AA)
 
     for x, y in pts:
         cv2.circle(image, (x, y), 4, (0, 0, 255), -1, cv2.LINE_AA)
@@ -87,7 +91,8 @@ def extract_2d_keypoints(image, height, width):
     Extracts 2D keypoints from a provided image.
 
     Uses MediaPipe's PoseLandmarker to detect a single pose in an image.
-    It processes the image, identifies pose landmarks, and returns their 2D coordinates
+    It processes the image, identifies pose landmarks, and returns their 2D
+    coordinates
     scaled to the given width and height of the image.
 
     Parameters:

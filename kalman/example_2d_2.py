@@ -14,22 +14,25 @@ Usage:
 from pathlib import Path
 
 import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
+from absl import app, flags, logging
+from matplotlib.lines import Line2D
+from matplotlib.patches import Ellipse
 
 matplotlib.use("qtagg")
-import matplotlib.pyplot as plt
-from matplotlib.patches import Ellipse
-from absl import app, flags, logging
 
 FLAGS = flags.FLAGS
 flags.DEFINE_integer("n_samples", 15, "Number of position samples.")
 flags.DEFINE_float("dt", 1.0, "Sample interval (s).")
 flags.DEFINE_float("radius", 10.0, "Radius of the true circular trajectory.")
-flags.DEFINE_float("sigma_model", 1.5, "Process noise std (random walk perturbation).")
+flags.DEFINE_float("sigma_model", 1.5,
+                   "Process noise std (random walk perturbation).")
 flags.DEFINE_float("sigma_meas", 1.0, "Measurement noise std.")
 flags.DEFINE_string("output_dir", "output", "Directory for saved plots.")
 flags.DEFINE_boolean("show", False, "Show plots interactively.")
-flags.DEFINE_integer("seed", 42, "Random seed for measurements (-1 = unseeded).")
+flags.DEFINE_integer("seed", 42,
+                     "Random seed for measurements (-1 = unseeded).")
 
 
 def generate_true_trajectory(n_samples, radius):
@@ -68,12 +71,12 @@ def run_kalman_alternating(true_states, sigma_model, sigma_meas, rng):
             # Measure X only (w_1)
             m = np.array([[1.0, 0.0]])
             z = true_states[0, k] + sigma_meas * rng.standard_normal()
-            m_history.append('x')
+            m_history.append("x")
         else:
             # Measure Y only (w_2)
             m = np.array([[0.0, 1.0]])
             z = true_states[1, k] + sigma_meas * rng.standard_normal()
-            m_history.append('y')
+            m_history.append("y")
 
         # 3. Update Step
         s = m @ p_pred @ m.T + r  # S is a 1x1 scalar here
@@ -104,16 +107,18 @@ def get_cov_ellipse(cov, pos, nstd=1, **kwargs):
     return Ellipse(xy=pos, width=width, height=height, angle=theta, **kwargs)
 
 
-def plot_alternating_measurements(true_states, x_k_buffer, p_buffer, m_history, output_path, show):
+def plot_alternating_measurements(true_states, x_k_buffer, p_buffer, m_history,
+                                  output_path, show):
     """Plots the true state and Kalman estimates with error ellipses."""
     n_samples = true_states.shape[1]
     fig, ax = plt.subplots(figsize=(8, 8))
 
     # True state (red dots/lines)
-    ax.plot(true_states[0, :], true_states[1, :], 'r.-', markersize=8, zorder=3, label='True state')
+    ax.plot(true_states[0, :], true_states[1, :], "r.-", markersize=8, zorder=3,
+            label="True state")
 
     # Connecting black lines for the estimates
-    ax.plot(x_k_buffer[0, :], x_k_buffer[1, :], 'k-', zorder=1, linewidth=1.5)
+    ax.plot(x_k_buffer[0, :], x_k_buffer[1, :], "k-", zorder=1, linewidth=1.5)
 
     # Plot Estimates and Covariance Ellipses
     for k in range(n_samples):
@@ -123,14 +128,15 @@ def plot_alternating_measurements(true_states, x_k_buffer, p_buffer, m_history, 
         # Color coding:
         # Blue when X was measured (ellipse stretches vertically along Y)
         # Cyan when Y was measured (ellipse stretches horizontally along X)
-        color = 'blue' if m_history[k] == 'x' else 'teal'
+        color = "blue" if m_history[k] == "x" else "teal"
 
         # Plot estimate dot
         ax.scatter(pos[0], pos[1], color=color, zorder=4, s=30)
 
         # Plot covariance ellipse (using 1.5 standard deviations for visibility)
-        ellip = get_cov_ellipse(cov, pos, nstd=1.5, edgecolor=color, facecolor='none',
-                                linestyle='--', linewidth=1.2, zorder=2)
+        ellip = get_cov_ellipse(cov, pos, nstd=1.5, edgecolor=color,
+                                facecolor="none",
+                                linestyle="--", linewidth=1.2, zorder=2)
         ax.add_patch(ellip)
 
     ax.set_title("Kalman Filter with Alternating 1D Measurements")
@@ -138,15 +144,16 @@ def plot_alternating_measurements(true_states, x_k_buffer, p_buffer, m_history, 
     ax.set_ylabel("$w_2$", rotation=0, labelpad=15)
 
     # Custom legend
-    from matplotlib.lines import Line2D
     legend_elements = [
-        Line2D([0], [0], color='red', marker='.', label='True State'),
-        Line2D([0], [0], color='blue', marker='o', linestyle='--', label='Posterior (measured $w_1$)'),
-        Line2D([0], [0], color='teal', marker='o', linestyle='--', label='Posterior (measured $w_2$)')
+        Line2D([0], [0], color="red", marker=".", label="True State"),
+        Line2D([0], [0], color="blue", marker="o", linestyle="--",
+               label="Posterior (measured $w_1$)"),
+        Line2D([0], [0], color="teal", marker="o", linestyle="--",
+               label="Posterior (measured $w_2$)")
     ]
-    ax.legend(handles=legend_elements, loc='lower right')
+    ax.legend(handles=legend_elements, loc="lower right")
 
-    ax.set_aspect('equal')
+    ax.set_aspect("equal")
     ax.set_xticks([])
     ax.set_yticks([])
 
@@ -167,7 +174,8 @@ def plot_alternating_measurements(true_states, x_k_buffer, p_buffer, m_history, 
 def main(argv):
     del argv
     rng = np.random.default_rng(None if FLAGS.seed < 0 else FLAGS.seed)
-    logging.info("Running alternating 2D Kalman filter: n_samples=%d", FLAGS.n_samples)
+    logging.info("Running alternating 2D Kalman filter: n_samples=%d",
+                 FLAGS.n_samples)
 
     true_states = generate_true_trajectory(FLAGS.n_samples, FLAGS.radius)
 
