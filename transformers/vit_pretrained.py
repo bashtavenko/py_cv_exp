@@ -8,21 +8,22 @@ import os
 import time
 from typing import Tuple
 
+import torch
+import torch.nn as nn
+import torchvision
+import torchvision.transforms as T
+from PIL import Image
 from absl import app
 from absl import flags
 from absl import logging
-import torch
-import torch.nn as nn
 from torch.utils.data import DataLoader
-import torchvision
 from torchvision.models import ViT_B_16_Weights, vit_b_16
-import torchvision.transforms as T
 
 FLAGS = flags.FLAGS
 
 flags.DEFINE_enum(
     "mode",
-    "train",
+    "eval",
     ["train", "eval"],
     "Execution mode: 'train' to fine-tune and save, 'eval' to load checkpoint "
     "and run inference.",
@@ -131,6 +132,37 @@ def build_model(
 
 
 @torch.no_grad()
+def classify_image(model: nn.Module, image_path: str) -> Tuple[str, float]:
+    """Returns a CIFAR-10 class name and softmax confidence in [0, 1].
+    Uses an already fine-tuned model.
+    """
+    classes = (
+        "airplane", "automobile", "bird", "cat", "deer",
+        "dog", "frog", "horse", "ship", "truck",
+    )
+
+    # Match the preprocessing used for CIFAR-10 evaluation.
+    preprocess = ViT_B_16_Weights.DEFAULT.transforms()
+    transform = T.Compose([
+        T.Resize((224, 224), antialias=True),
+        T.ToTensor(),
+        T.Normalize(mean=preprocess.mean, std=preprocess.std),
+    ])
+    with Image.open(image_path) as image:
+        inputs = transform(image.convert("RGB")).unsqueeze(0)
+
+    # Run a batch of one on the model's device, with gradients disabled.
+    parameter = next(model.parameters())
+    inputs = inputs.to(device=parameter.device, dtype=parameter.dtype)
+    model.eval()
+    logits = model(inputs)
+
+    # Convert logits to probabilities and look up the winning class name.
+    confidence, predicted = logits.float().softmax(dim=1).max(dim=1)
+    return classes[predicted.item()], confidence.item()
+
+
+@torch.no_grad()
 def evaluate_top1(
         model: nn.Module, loader: DataLoader, device: torch.device,
         use_amp: bool = False
@@ -199,6 +231,11 @@ def run_inference(ckpt_path: str, device: torch.device, use_amp: bool) -> None:
             top1,
             eval_time,
         )
+
+    image_path = "data/images/cifar10/train/0000_airplane.png"
+    predicted_class, confidence = classify_image(model, image_path)
+    logging.info("CIFAR-10 sample: %s | Prediction: %s | Confidence: %.2f%%",
+                 image_path, predicted_class, 100.0 * confidence)
 
 
 def run_training(ckpt_path: str, device: torch.device, use_amp: bool) -> None:
