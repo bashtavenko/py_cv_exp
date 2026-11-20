@@ -3,6 +3,7 @@ ViT model for CIFAR-10 classification, i.e. representation transfer.
 Replaces built-in ImageNet weights with fine-tuned weights for CIFAR-10.
 This is a pure classification model and not object detection.
 It probably has 86M parameters. Although latency is not good.
+This is horrible and example is what vibecoding does.
 """
 import os
 import time
