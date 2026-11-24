@@ -27,10 +27,12 @@ def get_datasets():
                                    download=False,
                                    transform=transforms.ToTensor())
     # Get min and std
-    # Gets # (3, 32, 32, 50000)
+    # Adds new image axis to the forth position (3, 32, 32, 50000)
     images = torch.stack([img for img, _ in train_dataset], dim=3)
-    mean = images.view(3, -1).mean(dim=1)
-    std = images.view(3, -1).std(dim=1)
+    # images.view(3, -1) flattens the image tensor to a 2D
+    # tensor with shape (3, 32*32*50000)
+    mean = images.view(3, -1).mean(dim=1)  # Get min for each channel
+    std = images.view(3, -1).std(dim=1)  # Get std for each channel
     logging.info(f"Mean: {mean} std: {std}")
 
     # Swap transform that includes normalization
@@ -38,8 +40,8 @@ def get_datasets():
         transforms.ToTensor(),
         transforms.Normalize(mean, std)
     ])
-    train_dataset.transforms = transform
-    val_dataset.transforms = transform
+    train_dataset.transform = transform
+    val_dataset.transform = transform
     return train_dataset, val_dataset
 
 
@@ -48,7 +50,7 @@ def main(_):
     train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
 
     model = nn.Sequential(
-        nn.Linear(3072, 512),
+        nn.Linear(3072, 512),  # 3072 = 3 * 32 * 32
         nn.Tanh(),
         nn.Linear(512, 10),
         nn.LogSoftmax(dim=1))
@@ -59,11 +61,13 @@ def main(_):
     loss_fn = nn.NLLLoss()
 
     for epoch in range(n_epochs):
-        for imgs, labels in train_loader:
-            batch_size = imgs.shape[0]
-            img_tensor = imgs.view(batch_size, -1)
+        for img, label in train_loader:
+            # imge.shape: (64, 3, 32, 32)
+            batch_size = img.shape[0]
+            # Flattens each image to a 2D tensor (64, 3072)
+            img_tensor = img.view(batch_size, -1)
             out = model(img_tensor)
-            loss = loss_fn(out, labels)
+            loss = loss_fn(out, label)
 
             optimizer.zero_grad()
             loss.backward()
@@ -77,11 +81,11 @@ def main(_):
     correct = 0
     total = 0
     with torch.no_grad():
-        for imgs, labels in val_loader:
-            outputs = model(imgs.view(imgs.shape[0], -1))
+        for img, label in val_loader:
+            outputs = model(img.view(img.shape[0], -1))
             _, predicted = torch.max(outputs, dim=1)
-            total += labels.shape[0]
-            correct += int((predicted == labels).sum())
+            total += label.shape[0]
+            correct += int((predicted == label).sum())
 
     logging.info(f"Accuracy: {correct / total:.2%}")
 

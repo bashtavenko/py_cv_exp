@@ -20,15 +20,11 @@ download_and_extract_archive(
     md5="c58f30108f718f92721af3b95e74349a",
 )
 ds = datasets.CIFAR10(data_path, train=True, download=False)
-class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer',
-               'dog', 'deer', 'horse', 'ship', 'truck']
 
 fig = plt.figure(figsize=(8, 3))
-num_classes = 10
-
-for i in range(num_classes):
+for i in range(len(ds.classes)):
     ax = fig.add_subplot(2, 5, 1 + i, xticks=[], yticks=[])
-    ax.set_title(class_names[i])
+    ax.set_title(ds.classes[i])
     # __getitem() returns (img, target)
     # img, label = ds[0]
     img = next(img for img, target in ds if target == i)
